@@ -6,7 +6,7 @@ Keep your existing `deftest`s, but gain flexibility around how you run them.
 
 ## Usage
 
-Add `[circleci/circleci.test "0.4.3"]` to your `:dependencies` under `:dev`.
+Add `[circleci/circleci.test "0.5.0"]` to your `:dependencies` under `:dev`.
 
 It's recommended to use this set of Leiningen aliases:
 
@@ -50,6 +50,8 @@ in a test selector as a command-line argument:
 
 ### Reporters
 
+#### JUnit
+
 In order to gather metadata about your test runs, you can configure
 `circleci.test` to emit output
 in [JUnit XML format](https://ant.apache.org/manual/Tasks/junitreport.html) by
@@ -74,6 +76,20 @@ re-run only the set of tests which previously failed. Adding an alias in
 ```clj
 :aliases {"test" ["run" "-m" "circleci.test/dir" :project/test-paths]
           "retest" ["run" "-m" "circleci.test.retest"]}
+```
+
+#### CIDER
+
+`circleci.test` by default breaks [CIDER](https://cider.mx) test
+reports. To avoid this, use these settings in your
+`dev-resources/circleci_test/config.clj` to activate the CIDER test
+result adapter:
+
+```clojure
+(require '[circleci.test.report.cider :as cider])
+
+{:reporters [circleci.test.report/clojure-test-reporter
+             cider/reporter]}
 ```
 
 ### Running tests from a repl
@@ -106,6 +122,18 @@ any one individual test file though; otherwise it may not get loaded:
                    (stest/instrument)
                    (myapp.db/migrate)
                    (f))}
+```
+
+The global fixture must return the return value of `f`. If you need to do a teardown step you must do something like this:
+
+```clj
+(require '[clojure.spec.test.alpha :as stest])
+{:global-fixture (fn [f]
+                   (stest/instrument)
+                   (myapp.db/migrate)
+                   (let [results (f)]
+                     (teardown)
+                     results))}
 ```
 
 ### Test Isolation
